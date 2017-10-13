@@ -1,0 +1,398 @@
+;; Require Emacs' package functionality
+(require 'package)
+
+(setq package-list '(helm bind-key neotree help-fns+ yasnippet web-mode expand-region multiple-cursors emmet-mode smartparens projectile helm-projectile))
+
+;; Add the Melpa repository to the list of package sources
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+
+;; Initialise the package system.
+(package-initialize)
+
+(unless package-archive-contents
+  (package-refresh-contents))
+
+(dolist (package package-list)
+  (unless (package-installed-p package)
+    (package-install package)))
+
+
+
+(add-to-list 'auto-mode-alist '("\\.php$" . my-setup-php))
+
+
+(autoload 'php-mode "php-mode" "Major mode for editing PHP code." t)
+(add-to-list 'auto-mode-alist '("\\.php$" . php-mode))
+(add-to-list 'auto-mode-alist '("\\.inc$" . php-mode))
+
+(add-hook 'after-init-hook #'global-flycheck-mode)
+
+
+(require 'bind-key)
+
+  (require 'neotree)
+  (global-set-key [f8] 'neotree-toggle)
+(setq neo-smart-open t)
+(setq projectile-switch-project-action 'neotree-projectile-action)
+
+  (defun neotree-project-dir ()
+    "Open NeoTree using the git root."
+    (interactive)
+    (let ((project-dir (projectile-project-root))
+          (file-name (buffer-file-name)))
+      (neotree-toggle)
+      (if project-dir
+          (if (neo-global--window-exists-p)
+              (progn
+                (neotree-dir project-dir)
+                (neotree-find file-name)))
+        (message "Could not find git project root."))))
+
+ (global-set-key [f8] 'neotree-project-dir)
+
+;; help mieux
+(require 'help-fns+)
+
+(setq c-default-style "k&r")
+
+;;(require 'autopair)
+;;(autopair-global-mode)
+(require 'smartparens-config)
+(smartparens-global-mode)
+
+
+(require 'yasnippet)
+(yas-global-mode 1)
+(setq yas-buffer-local-condition t)
+
+(add-hook 'after-init-hook 'global-company-mode)
+(global-set-key "\t" 'company-complete-common)
+;;ymap (kbd "M-s") 'company-select-next)
+;;(define-key make-sparse-keymap (kbd "M-r") 'company-select-previous)
+(with-eval-after-load 'company
+  (define-key company-active-map (kbd "M-n") nil)
+  (define-key company-active-map (kbd "M-p") nil)
+  (define-key company-active-map (kbd "C-s") #'company-select-next)
+  (define-key company-active-map (kbd "C-r") #'company-select-previous))
+
+
+;; HELM
+(require 'helm)
+
+(require 'helm-config)
+
+(global-set-key (kbd "C-x C-f") 'helm-find-files)
+(global-set-key (kbd "M-x") 'helm-M-x)
+(global-set-key (kbd "C-x b") 'helm-mini)
+
+(define-key helm-map (kbd "C-s") 'helm-next-line)
+(define-key helm-map (kbd "C-r") 'helm-previous-line)
+
+(define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action) ; rebind tab to run persistent action
+(define-key helm-map (kbd "C-i") 'helm-execute-persistent-action) ; make TAB work in terminal
+
+(helm-mode 1)
+
+(define-key helm-find-files-map (kbd "C-s") 'helm-next-line)
+(define-key helm-find-files-map (kbd "C-r") 'helm-previous-line)
+
+(projectile-global-mode)
+(setq projectile-completion-system 'helm)
+(helm-projectile-on)
+(define-key helm-projectile-find-file-map (kbd "C-s") 'helm-next-line)
+(define-key helm-projectile-find-file-map (kbd "C-r") 'helm-previous-line)
+(global-set-key (kbd "C-é") 'helm-projectile-find-file)
+
+
+(global-set-key (kbd "M-y") 'helm-show-kill-ring)
+;;(add-hook 'js2-mode-hook 'ac-js2-mode)
+
+
+(require 'expand-region)
+(global-set-key (kbd "C-+") 'er/expand-region)
+(global-set-key (kbd "C--") 'er/contract-region)
+
+(pending-delete-mode t)
+
+(require 'multiple-cursors)
+(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+
+(global-set-key (kbd "C-=") 'mc/mark-next-like-this)
+(global-set-key (kbd "C-%") 'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-=") 'mc/mark-all-like-this)
+
+
+;; empeche a la ligne après un snippet
+(setq-default mode-require-final-newline nil)
+
+;; ligne à la 80 colonne
+;; (require 'fill-column-indicator)
+;; (setq-default fill-column 80)
+;; (define-globalized-minor-mode
+;;   global-fci-mode fci-mode (lambda () (fci-mode 1)))
+;; (global-fci-mode t)
+
+;; remove icones tool bar
+(tool-bar-mode -1)
+
+;; remove scroll bar
+(scroll-bar-mode -1)
+
+;; pour afficher les num de ligne
+(global-linum-mode 1)
+
+;; move line
+(global-move-dup-mode)
+
+;; pour lua
+(autoload 'lua-mode "lua-mode" "Lua editing mode." t)
+(add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
+(add-to-list 'interpreter-mode-alist '("lua" . lua-mode))
+
+
+(setq ispell-dictionary "english")
+
+
+(require 'emmet-mode)
+(add-hook 'sgml-mode-hook 'emmet-mode) ;; Auto-start on any markup modes
+(add-hook 'css-mode-hook  'emmet-mode) ;; enable Emmet's css abbreviation
+(add-hook 'web-mode-hook  'emmet-mode) ;; enable Emmet's css abbreviation
+
+(add-hook 'emmet-mode-hook
+          (lambda ()
+            ;; clearing old C-j and C-return key mapping.
+            (define-key emmet-mode-keymap (kbd "C-j")        nil)
+            (define-key emmet-mode-keymap (kbd "<C-return>") nil)
+            ;; define new M-j key mapping instead.
+            (define-key emmet-mode-keymap (kbd "M-j")        'emmet-expand-line)
+            (define-key emmet-mode-keymap (kbd "M-n")        'emmet-next-edit-point)
+            (define-key emmet-mode-keymap (kbd "M-t")        'emmet-prev-edit-point)
+	    )
+	  )
+
+(setq emmet-move-cursor-between-quotes t) ;; default nil
+
+
+
+;; key binding des mouvement
+;;      r
+;;  t      n
+;;      s
+					;p
+;; on libère les touche b     f  
+
+;; enlever les tabs
+;;(global-set-key "\C-cu" 'untabify)
+
+;; enlever les espaces à droite
+;;(global-set-key "\C-ct" 'delete-trailing-whitespace)
+
+;; left
+(global-unset-key "\C-t") ;; transpose-chars enlevé
+(global-set-key "\C-t" 'backward-char )
+
+;; one word left
+(global-unset-key "\M-t") ;; transpore words
+(global-set-key "\M-t" 'backward-word)
+
+;; down
+(global-unset-key "\C-s") ;;i-sarch forward
+(global-set-key "\C-s" 'next-line)
+
+;; up
+(global-unset-key "\C-r") ;;i-search backward-char
+(global-set-key "\C-r" 'previous-line)
+
+;; right
+(global-unset-key "\C-n") ;; next-line
+(global-set-key "\C-n" 'forward-char)
+
+;; search
+(global-unset-key "\C-v") ;; scroll-up-command
+(global-set-key "\C-v" 'isearch-forward)
+
+;; pg-up 
+(global-set-key "\M-s" 'scroll-up-command)
+;; pg-down
+(global-set-key "\M-r" 'scroll-down)
+
+;; one word right
+(global-set-key "\M-n" 'forward-word)
+
+;; on va utiliser C-b comme C-x o
+(global-unset-key "\C-b")
+;; changer fenetre
+(global-set-key "\C-b" 'other-window)
+
+
+;; on va utiliser p pour spliter verticalement
+(global-set-key "\C-p" 'split-window-horizontally)
+
+;; split horizontal C-i inutilisable
+(global-set-key "\C-o" 'split-window-vertically)
+
+
+
+;; transpose des lignes
+(global-set-key "\C-xt" 'transpose-lines)
+
+;; copy line1
+(global-set-key "\M-g" "\C-a\C- \C-s\M-w")
+;;(global-unset-key "\C-k")
+;;(global-set-key "\C-k" 'kill-whole-line)
+;;(global-set-key (kbd "C-é") 'kill-whole-line)
+;(global-set-key (kbd "C-é") 'projcetile-find-file)
+;;(global-set-key "\C-k" 'kill-whole-line)
+
+(global-set-key "\C-cs" 'whitespace-mode)
+
+;; max window
+;;(global-set-key "\C-q" 'delete-other-windows)
+
+;; fermer window
+;;(global-set-key "\C-f" "\C-x0")
+
+
+;comment-region et uncomment-region
+(global-set-key [?\C-z] 'comment-line)
+(global-set-key [?\M-z] 'comment-or-uncomment-region)
+
+;; ;search
+(global-set-key [?\C-v] 'isearch-forward)
+(global-set-key [?\M-v] 'isearch-backward)
+
+;yank et yank alt
+(global-set-key [?\C-l] 'yank)
+
+;;(global-set-key [?\M-l] 'yank-pop)
+(global-set-key (kbd "M-l") 'helm-show-kill-ring)
+;; Déplacement avec grain 1: ctrsnm
+(global-set-key [?\C-t] 'backward-char)
+(global-set-key [?\C-s] 'next-line)
+(global-set-key [?\C-r] 'previous-line)
+(global-set-key [?\C-n] 'forward-char)
+
+;; Déplacement avec grain 2: ctrsnmr
+(global-set-key [?\M-c] 'beginning-of-buffer)
+(global-set-key [?\M-t] 'backward-word)
+(global-set-key [?\M-s] 'scroll-up)
+(global-set-key [?\M-r] 'scroll-down)
+(global-set-key [?\M-n] 'forward-word)
+(global-set-key [?\M-m] 'end-of-buffer)
+
+
+;; Suppression avec grain 1: ,qghfç
+;;(global-set-key [?\C-'] 'backward-kill-line)
+(global-set-key [?\C-q] 'backward-delete-char-untabify)
+(global-set-key [?\C-g] 'kill-whole-line)
+(global-set-key [?\C-h] 'kill-region)
+(global-set-key [?\C-f] 'delete-char)
+(global-set-key (kbd "C-ç") 'kill-line)
+
+;; Suppression avec grain 2: ctrsnm
+;(global-set-key [?\M-'] ') ;TODO: kill to beginning of buffer
+(global-set-key [?\M-q] 'backward-kill-word)
+;;(global-set-key [?\M-g] ') ;TODO: Copy whole line
+(global-set-key [?\M-h] 'kill-ring-save)
+(global-set-key [?\M-f] 'kill-word)
+;;(global-set-key [?\M-ç] ') ;TODO: kill to end of buffer
+
+
+;;(global-set-key "\C-x\C-q" 'save-buffers-kill-terminal)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Gestion des commandes conflictuelles ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;Emacs traine de vielles casseroles dues à sa gestion ASCII des caractères
+;;C-i et TAB sont identiques
+;;C-j et suppr sont identiques
+;;C-m et entrée sont identiques
+;;Si on assigne C-m par exemple, on perd la touche entrée
+;;La seule solution pour éviter ça, est le hack ci-dessous:
+
+;; Translate the problematic keys to the function key Hyper:
+;; (keyboard-translate ?\C-i ?\H-i)
+;; (keyboard-translate ?\C-m ?\H-m)
+;; (keyboard-translate ?\C-j ?\H-j)
+;; ;; Rebind then accordantly: 
+;; (global-set-key [?\H-m] 'move-end-of-line)
+;; (global-set-key [?\H-j] 'indent-region)
+;; (global-set-key [?\H-i] 'other-window-backward)
+
+;(global-set-key "\C-c" 'move-beginning-of-line)
+;;(define-key key-translation-map "\C-k" "\C-c") ;; C-c devient C-k
+;;(define-key key-translation-map "\C-c" "\C-a") ;; C-c devieant C-a
+
+
+
+
+(require 'web-mode)
+(add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.php?\\'" . web-mode))
+
+
+(setq-default indent-tabs-mode nil)
+
+(defun my-web-mode-hook ()
+  "Hooks for Web mode."
+  (setq web-mode-markup-indent-offset 4)
+  (setq web-mode-css-indent-offset 4)
+  (setq web-mode-code-indent-offset 4)
+  (setq web-mode-indent-style 4)
+  (setq web-mode-enable-current-element-highlight t)
+  (setq web-mode-enable-current-column-highlight t)
+  )
+(add-hook 'web-mode-hook  'my-web-mode-hook)
+
+;; met le ~ dans .saves
+(setq backup-directory-alist `(("." . "~/.saves")))
+(setq backup-by-copying t)
+(setq delete-old-versions t
+      kept-new-versions 6
+      kept-old-versions 2
+      version-control t)
+
+
+;; line spacing = line height
+(setq-default line-spacing 3)
+
+
+;;(load-theme 'base16-twilight-dark t)
+(load-theme 'nord t)
+
+(set-default-font "Source Code Pro")
+(set-face-attribute 'default nil :height 180)
+;;80;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;120;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Source Code Pro
+;; Inconsolata
+;; Hack
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   (quote
+    ("d1a42ed39a15a843cccadf107ee0242b5f78bfbb5b70ba3ce19f3ea9fda8f52d" "aed73c6d0afcf2232bb25ed2d872c7a1c4f1bda6759f84afc24de6a1aec93da8" "cdfb22711f64d0e665f40b2607879fcf2607764b2b70d672ddaa26d2da13049f" "294834baa9ca874795a3181cce7aaf228b1e3fb3899587ffd3ae7546de328c90" "50e7f9d112e821e42bd2b8410d50de966c35c7434dec12ddea99cb05dd368dd8" "0ae52e74c576120c6863403922ee00340a3bf3051615674c4b937f9c99b24535" "db2ecce0600e3a5453532a89fc19b139664b4a3e7cbefce3aaf42b6d9b1d6214" default)))
+ '(hl-paren-colors
+   (quote
+    ("#B9F" "#B8D" "#B7B" "#B69" "#B57" "#B45" "#B33" "#B11")))
+ '(package-selected-packages
+   (quote
+    (nord-theme vue-mode yaml-mode yasnippet web-mode tidy sublime-themes spacemacs-theme smartparens rainbow-mode python-mode php-mode neotree multiple-cursors multi-web-mode move-dup lua-mode latex-preview-pane impatient-mode help-fns+ helm-projectile free-keys flymake-php flycheck fill-column-indicator expand-region emmet-mode conkeror-minor-mode company-web bind-key base16-theme autopair auto-complete-chunk auctex arjen-grey-theme ac-js2 ac-html))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:background nil)))))

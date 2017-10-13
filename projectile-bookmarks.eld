@@ -1,0 +1,1 @@
+("~/Code/scala/hello/" "~/.emacs.d/elpa/jedi-core-20170121.610/")
