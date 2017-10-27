@@ -1,5 +1,12 @@
 * Key Bindings for bépo layout
 #+BEGIN_SRC emacs-lisp
+
+;; emacs and mac os(for work, i dont like mac/apple) option keys problems resolved , second answer
+;; https://apple.stackexchange.com/questions/12087/emacs-on-mac-os-x-to-alt-or-command
+(when (eq system-type 'darwin)
+  (setq mac-right-option-modifier 'none))
+
+
 ;; key binding des mouvement
 ;;      r
 ;;  t      n
